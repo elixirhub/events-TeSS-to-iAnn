@@ -1,2 +1,5 @@
 pysolr
 mock==1.0.1
+daemon
+click
+python-daemon
