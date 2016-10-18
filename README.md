@@ -2,10 +2,12 @@
 We aim to develop the functionality to update iAnn events using the TeSS web service. More inforamtion about the project coming soon.
 
 ## Installation
-You will need **pip** to install the script requirements, [over here](https://pip.pypa.io/en/stable/installing/) you will find documentation about installing **pip** in your OS.
+You will need **pip** to install the script requirements, [over here](https://pip.pypa.io/en/stable/installing/) you will find documentation about installing **pip** in your OS. the safer way to get your requirements installed without afecting any other Python project you have is using [**virtualenv**](http://docs.python-guide.org/en/latest/dev/virtualenvs/).
 ```{r, engine='bash', count_lines}
 git clone https://github.com/elixirhub/events-sync-tess-to-iann.git
 cd events-sync-tess-to-iann
+viartualenv .venv
+source activate .venv/bin/activate
 pip install -r requirements.txt
 ```
 ## Configuration
