@@ -113,15 +113,8 @@ def push_to_iann(events):
 @click.option('--start', default=None, help='Start date')
 def run(delay, log, tess_url, iann_url, daemonize, start, include_expired):
     """
-    Command line interface and main function
-    :param delay: seconds between executions when runs as daemon
-    :param log: log file path
-    :param tess_url: TeSS Web Service URL
-    :param iann_url: iAnn Solr URL
-    :param daemonize: Boolean to indicate if the process should be a daemon
-    :param start: Start date
-    :param include_expired: Flag to indicate if should be fetched expired events from TeSS
-    :return: None
+    ELIXIR TeSS to iAnn events synchronizer script V 0.0
+    Script to get TeSS events and push them to iAnn. It can be used as a batch process or as a daemon process.
     """
     conf.LOG_FILE = log
     conf.TESS_URL = tess_url
@@ -145,5 +138,8 @@ def run(delay, log, tess_url, iann_url, daemonize, start, include_expired):
 
 
 if __name__ == "__main__":
-    run()
+    try:
+        run()
+    except AttributeError:
+        print "Try 'python tess_to_iann.py --help' to get information about usage"
 
