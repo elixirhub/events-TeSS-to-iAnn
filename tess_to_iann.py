@@ -6,7 +6,7 @@ from TeSS to iAnn event registry.
 """
 from dateutil.parser import parse
 from pytz import UTC as utc
-from datetime import datetime
+from datetime import datetime, timedelta
 import pysolr
 import urllib2
 import json
@@ -15,6 +15,11 @@ import logging
 import daemon
 import time
 import click
+import os
+import sys
+
+
+WELCOME_MSJ = 'ELIXIR TeSS to iAnn events synchronizer script V 0.0'
 
 
 def init():
@@ -37,82 +42,108 @@ def map_tess_to_iann(tess_event=None):
     return iann_event
 
 
-def get_tess_page_events(page=1, start_dt=None, end_dt=None):
+def get_tess_events_from_url(query_url):
     """
-    Gets the events data for a given TeSS results page
-    :param page: the number of the page corresponding to the result set pagination (default 1)
-    :param start_dt:
-    :param end_dt:
+    Gets the events data for a given TeSS query URL
+    :param query_url: query url
     :return: all the events retrieved for the page
     """
-    start_dt = start_dt or utc.localize(parse("2000-01-01"))
-    end_dt = end_dt or utc.localize(datetime.now())
-    # Generate the URL to make the query
-    query_url = conf.TESS_URL + '?' + 'page=%d' % page
     # Execute the HTTP query
+    logging.info("Query to TeSS web service: " + query_url)
     page_data = urllib2.urlopen(query_url)
     # Load the JSON data into a Python dict
     tess_events = json.load(page_data)
-
-    # Iterate over the result set and map the TeSS events fields to iAnn events fields
-    iann_events = [map_tess_to_iann(tess_event) for tess_event in tess_events
-                   if start_dt < parse(tess_event['updated_at']) < end_dt]
-    return iann_events
+    return tess_events
 
 
-def get_tess_all_events(start_dt=None, end_dt=None):
+def get_tess_all_events(start_dt=None, expired=False):
     """
     Retrieves all the data available from TeSS
+    :param start_dt: date to start harversting events
+    :param expired: flag to indicate if expired events must be fetched
     :return: all the events available from TeSS
     """
     page = 1
-    data = []
-    logging.info("Starting harvesting of TeSS events data")
+    tess_events = []
+    end_dt = utc.localize(datetime.now())
+    start_dt = start_dt or utc.localize(parse('2000-01-01'))
+    logging.info('Starting harvesting of TeSS events data from ' + str(start_dt) + ' to ' + str(end_dt))
     # Repeat the data gathering for every possible page until there is no results
     while True:
-        logging.info("Retrieving TeSS data for page # %d" % page)
-        page_results = get_tess_page_events(page, start_dt, end_dt)
+        logging.info('Retrieving TeSS data for page # %d' % page)
+        # Generate the URL to make the query
+        query_url = conf.TESS_URL + '?' + 'page=%d' % page
+        if expired:
+            query_url += '&include_expired=true'
+        page_results = get_tess_events_from_url(query_url)
         if not page_results:
-            logging.info("Finishing harvesting")
-            logging.info('/**********************************/')
+            logging.info('Finishing harvesting')
             break
-        data.append(page_results)
+        tess_events += page_results
         page += 1
-    return data
+    logging.info('Performing conversion from TeSS events to iAnn events')
+    # Iterate over the result set and map the TeSS events fields to iAnn events fields
+    iann_events = [map_tess_to_iann(tess_event) for tess_event in tess_events
+                   if start_dt < parse(tess_event['updated_at']) < end_dt]
+    logging.info('Conversion done! %d updated events retrieved and converted' % len(iann_events))
+    logging.info('/****************************************/')
+    return dict(start=start_dt, end=end_dt, events=iann_events)
 
 
-def push_to_iann(docs):
+def push_to_iann(events):
     """
-    Adds data to Iann Solr from a Solr data structure
-    :param docs: a list of dictionaries containing Solr docs
+    Adds data to iAnn Solr from a Solr data structure
+    :param events: list of events to be pushed to iAnn Solr
     """
     # Instantiates Solr service
     solr = pysolr.Solr(conf.IANN_URL, timeout=10)
     # Add Solr documents to service
     solr.add(
-        docs
+        events
     )
 
 
 @click.command()
-@click.option('--delay', default=60, help='Seconds between executions')
+@click.option('--delay', default=10, help='Seconds between executions when the script is run as a daemon')
 @click.option('--log', default=conf.LOG_FILE, help='Log file path, if not defined will use the one on the conf.py')
 @click.option('--tess_url', default=conf.TESS_URL, help='TeSS service URL, if not defined will use the one on conf.py')
 @click.option('--iann_url', default=conf.IANN_URL, help='iAnn Solr URL, if not defined will use the one on conf.py')
-def run(delay, log, tess_url, iann_url):
+@click.option('--daemonize', is_flag=True, help='Flag to run the script as a daemon')
+@click.option('--include_expired', is_flag=True, help='Flag to fetch expired events from TeSS')
+@click.option('--start', default=None, help='Start date')
+def run(delay, log, tess_url, iann_url, daemonize, start, include_expired):
+    """
+    Command line interface and main function
+    :param delay: seconds between executions when runs as daemon
+    :param log: log file path
+    :param tess_url: TeSS Web Service URL
+    :param iann_url: iAnn Solr URL
+    :param daemonize: Boolean to indicate if the process should be a daemon
+    :param start: Start date
+    :param include_expired: Flag to indicate if should be fetched expired events from TeSS
+    :return: None
+    """
     conf.LOG_FILE = log
     conf.TESS_URL = tess_url
     conf.IANN_URL = iann_url
-    click.secho('Fetching events from TeSS every %d seconds' % delay, fg='red', bold=True)
-    with daemon.DaemonContext():
+    start = utc.localize(parse(start))
+    click.secho(WELCOME_MSJ, fg='yellow', bg='red', bold=True)
+    if not daemonize:
+        click.secho('Fetching events from TeSS', fg='blue', bold=True)
         init()
+        get_tess_all_events(start)
+        click.secho('Done!', fg='blue', bold=True)
+        return
+    click.secho('Fetching events from TeSS every %d seconds' % delay, fg='blue', bold=True)
+    with daemon.DaemonContext(stdout=sys.stdout, stderr=sys.stdout):
+        init()
+        click.secho('Process ID: %d' % os.getpid(), fg='red', bold=True, blink=True)
         while True:
-            get_tess_all_events()
+            results = get_tess_all_events(start, include_expired)
+            start = results['end']
             time.sleep(delay)
 
 
-#if __name__ == "__main__":
-#    run()
-init()
-get_tess_all_events()
+if __name__ == "__main__":
+    run()
 
