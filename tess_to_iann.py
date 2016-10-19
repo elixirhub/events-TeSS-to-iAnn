@@ -98,13 +98,11 @@ def push_to_iann(events):
     # Instantiates Solr service
     solr = pysolr.Solr(conf.IANN_URL, timeout=10)
     # Add Solr documents to service
-    solr.add(
-        events
-    )
+    solr.add(events)
 
 
 @click.command()
-@click.option('--delay', default=10, help='Seconds between executions when the script is run as a daemon')
+@click.option('--delay', default=10, help='Seconds between executions when the script is run as a daemon (eg. 60)')
 @click.option('--log', default=conf.LOG_FILE, help='Log file path, if not defined will use the one on the conf.py')
 @click.option('--tess_url', default=conf.TESS_URL, help='TeSS service URL, if not defined will use the one on conf.py')
 @click.option('--iann_url', default=conf.IANN_URL, help='iAnn Solr URL, if not defined will use the one on conf.py')
@@ -119,7 +117,7 @@ def run(delay, log, tess_url, iann_url, daemonize, start, include_expired):
     conf.LOG_FILE = log
     conf.TESS_URL = tess_url
     conf.IANN_URL = iann_url
-    start = utc.localize(parse(start))
+    start = utc.localize(parse(start)) if  start  else utc.localize(parse('2000-01-01'))
     click.secho(WELCOME_MSJ, fg='yellow', bg='red', bold=True)
     if not daemonize:
         click.secho('Fetching events from TeSS', fg='blue', bold=True)
@@ -133,6 +131,7 @@ def run(delay, log, tess_url, iann_url, daemonize, start, include_expired):
         click.secho('Process ID: %d' % os.getpid(), fg='red', bold=True, blink=True)
         while True:
             results = get_tess_all_events(start, include_expired)
+            push_to_iann(results['events'])
             start = results['end']
             time.sleep(delay)
 
