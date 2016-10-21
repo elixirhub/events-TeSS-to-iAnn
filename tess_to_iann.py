@@ -37,8 +37,9 @@ def map_tess_to_iann(tess_event=None):
     iann_event = dict()
     if not tess_event:
         return iann_event
-    for key, value in conf.TESS_TO_IANN_MAPPER.iteritems():
-        iann_event[value] = conf.IANN_NULL_VALUE if not tess_event[key] else tess_event[key]
+    for tess_field, iann_field in conf.TESS_TO_IANN_MAPPER.iteritems():
+        if tess_event[tess_field]:
+            iann_event[iann_field] = tess_event[tess_field]
     return iann_event
 
 
