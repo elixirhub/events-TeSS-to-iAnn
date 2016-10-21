@@ -6,7 +6,7 @@ from TeSS to iAnn event registry.
 """
 from dateutil.parser import parse
 from pytz import UTC as utc
-from datetime import datetime, timedelta
+from datetime import datetime
 import pysolr
 import urllib2
 import json
@@ -118,7 +118,7 @@ def run(delay, log, tess_url, iann_url, daemonize, start, include_expired):
     conf.LOG_FILE = log
     conf.TESS_URL = tess_url
     conf.IANN_URL = iann_url
-    start = utc.localize(parse(start)) if  start  else utc.localize(parse('2000-01-01'))
+    start = utc.localize(parse(start)) if start else utc.localize(parse('2000-01-01'))
     click.secho(WELCOME_MSJ, fg='yellow', bg='red', bold=True)
     if not daemonize:
         click.secho('Fetching events from TeSS', fg='blue', bold=True)
