@@ -57,7 +57,7 @@ cd [SCRIPT_PATH]
 source activate .venv/bin/activate
 ```
 ### Run as batch
-```{r, engine='bash', count_lines}sd
+```{r, engine='bash', count_lines}
 python tess_to_iaan.py --start 2016-10-17
 ```
 ### Run as daemon
