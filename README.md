@@ -10,6 +10,12 @@ viartualenv .venv
 source activate .venv/bin/activate
 pip install -r requirements.txt
 ```
+
+After you finish the script execution you will need to deactivate your virtual environment:
+```{r, engine='bash', count_lines}
+deactivate
+```
+
 ## Configuration
 You can configure this script using one of this methods:
 
