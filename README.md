@@ -49,7 +49,8 @@ Options:
   --start TEXT       Start date
   --help             Show this message and exit.
 ```
-If you are using a virtual environment to manage your dependencies you will have to activate before running the script:
+>## Notice
+>If you are using a virtual environment to manage your dependencies you will have to activate before running the script:
 
 ```{r, engine='bash', count_lines}
 cd [SCRIPT_PATH]
@@ -57,7 +58,7 @@ source activate .venv/bin/activate
 ```
 ### Run as batch
 ```{r, engine='bash', count_lines}sd
-python tess_to_iaan.py --start 2016-10-17sd
+python tess_to_iaan.py --start 2016-10-17
 ```
 ### Run as daemon
 ```{r, engine='bash', count_lines}jjdsdaslms
