@@ -49,11 +49,17 @@ Options:
   --start TEXT       Start date
   --help             Show this message and exit.
 ```
-### Run as batch
+If you are using a virtual environment to manage your dependencies you will have to activate before running the script:
+
 ```{r, engine='bash', count_lines}
-python tess_to_iaan.py --start 2016-10-17
+cd [SCRIPT_PATH]
+source activate .venv/bin/activate
+```
+### Run as batch
+```{r, engine='bash', count_lines}sd
+python tess_to_iaan.py --start 2016-10-17sd
 ```
 ### Run as daemon
-```{r, engine='bash', count_lines}
+```{r, engine='bash', count_lines}jjdsdaslms
 python tess_to_iaan.py --daemonize --delay 3600
 ```
