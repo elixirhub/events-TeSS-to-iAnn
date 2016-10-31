@@ -61,6 +61,6 @@ source activate .venv/bin/activate
 python tess_to_iaan.py --start 2016-10-17
 ```
 ### Run as daemon
-```{r, engine='bash', count_lines}jjdsdaslms
+```{r, engine='bash', count_lines}
 python tess_to_iaan.py --daemonize --delay 3600
 ```
