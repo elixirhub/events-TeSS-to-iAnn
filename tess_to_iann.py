@@ -38,8 +38,14 @@ def map_tess_to_iann(tess_event=None):
     if not tess_event:
         return iann_event
     for tess_field, iann_field in conf.TESS_TO_IANN_MAPPER.iteritems():
-        if tess_event[tess_field]:
+        if tess_field in tess_event and tess_event[tess_field]:
             iann_event[iann_field] = tess_event[tess_field]
+    iann_event['category'] = iann_event['category'] + ['event'] if 'category' in iann_event else ['event']
+    for index, item in enumerate(iann_event['category']):
+        if item == 'workshops_and_courses':
+            iann_event['category'][index] = 'course'
+        if item == 'meetings_and_conferences':
+            iann_event['category'][index] = 'meeting'
     return iann_event
 
 
@@ -57,7 +63,7 @@ def get_tess_events_from_url(query_url):
     return tess_events
 
 
-def get_tess_all_events(start_dt=None, expired=False):
+def get_tess_all_events(start_dt, expired=False):
     """
     Retrieves all the data available from TeSS
     :param start_dt: date to start harversting events
@@ -67,13 +73,13 @@ def get_tess_all_events(start_dt=None, expired=False):
     page = 1
     tess_events = []
     end_dt = utc.localize(datetime.now())
-    start_dt = start_dt or utc.localize(parse('2000-01-01'))
+    start_dt = start_dt
     logging.info('Starting harvesting of TeSS events data from ' + str(start_dt) + ' to ' + str(end_dt))
     # Repeat the data gathering for every possible page until there is no results
     while True:
         logging.info('Retrieving TeSS data for page # %d' % page)
         # Generate the URL to make the query
-        query_url = conf.TESS_URL + '?' + 'page=%d' % page
+        query_url = conf.TESS_URL + 'events.json' + '?' + 'page=%d' % page
         if expired:
             query_url += '&include_expired=true'
         page_results = get_tess_events_from_url(query_url)
@@ -87,7 +93,7 @@ def get_tess_all_events(start_dt=None, expired=False):
     iann_events = [map_tess_to_iann(tess_event) for tess_event in tess_events
                    if start_dt < parse(tess_event['updated_at']) < end_dt]
     logging.info('Conversion done! %d updated events retrieved and converted' % len(iann_events))
-    logging.info('/****************************************/')
+
     return dict(start=start_dt, end=end_dt, events=iann_events)
 
 
@@ -118,13 +124,26 @@ def run(delay, log, tess_url, iann_url, daemonize, start, include_expired):
     conf.LOG_FILE = log
     conf.TESS_URL = tess_url
     conf.IANN_URL = iann_url
-    start = utc.localize(parse(start)) if start else utc.localize(parse('2000-01-01'))
+    log_start = None
+    for line in reversed(list(open(conf.LOG_FILE))):
+        if 'Last End:' in line:
+            log_start = line.split('Last End:')[1]
+            break
+    if start:
+        start = utc.localize(parse(start))
+    elif log_start:
+        start = parse(log_start)
+    else:
+        start = utc.localize(parse('2000-01-01'))
     click.secho(WELCOME_MSJ, fg='yellow', bg='red', bold=True)
     if not daemonize:
         click.secho('Fetching events from TeSS', fg='blue', bold=True)
         init()
-        get_tess_all_events(start)
+        results = get_tess_all_events(start, include_expired)
+        push_to_iann(results['events'])
         click.secho('Done!', fg='blue', bold=True)
+        logging.info('Last End:' + str(results['end']))
+        logging.info('/**************************************************************************************/')
         return
     click.secho('Fetching events from TeSS every %d seconds' % delay, fg='blue', bold=True)
     with daemon.DaemonContext(stdout=sys.stdout, stderr=sys.stdout):
@@ -134,6 +153,8 @@ def run(delay, log, tess_url, iann_url, daemonize, start, include_expired):
             results = get_tess_all_events(start, include_expired)
             push_to_iann(results['events'])
             start = results['end']
+            logging.info('Last End:' + str(start))
+            logging.info('/**************************************************************************************/')
             time.sleep(delay)
 
 
