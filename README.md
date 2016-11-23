@@ -10,6 +10,12 @@ viartualenv .venv
 source activate .venv/bin/activate
 pip install -r requirements.txt
 ```
+
+After you finish the script execution you will need to deactivate your virtual environment:
+```{r, engine='bash', count_lines}
+deactivate
+```
+
 ## Configuration
 You can configure this script using one of this methods:
 
@@ -42,6 +48,13 @@ Options:
   --include_expired  Flag to fetch expired events from TeSS
   --start TEXT       Start date
   --help             Show this message and exit.
+```
+>## Notice
+>If you are using a virtual environment to manage your dependencies you will have to activate before running the script:
+
+```{r, engine='bash', count_lines}
+cd [SCRIPT_PATH]
+source activate .venv/bin/activate
 ```
 ### Run as batch
 ```{r, engine='bash', count_lines}
