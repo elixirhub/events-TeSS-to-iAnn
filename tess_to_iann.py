@@ -140,10 +140,15 @@ def run(delay, log, tess_url, iann_url, daemonize, start, include_expired):
         click.secho('Fetching events from TeSS', fg='blue', bold=True)
         init()
         results = get_tess_all_events(start, include_expired)
-        push_to_iann(results['events'])
-        click.secho('Done!', fg='blue', bold=True)
-        logging.info('Last End:' + str(results['end']))
-        logging.info('/**************************************************************************************/')
+        try:
+            push_to_iann(results['events'])
+            click.secho('Done!', fg='blue', bold=True)
+            logging.info('Last End:' + str(results['end']))
+            logging.info('/**************************************************************************************/')
+        except pysolr.SolrError:
+            logging.info('There was an error trying to push the events to iAnn Solr')
+            logging.info('/**************************************************************************************/')
+
         return
     click.secho('Fetching events from TeSS every %d seconds' % delay, fg='blue', bold=True)
     with daemon.DaemonContext(stdout=sys.stdout, stderr=sys.stdout):
@@ -151,10 +156,15 @@ def run(delay, log, tess_url, iann_url, daemonize, start, include_expired):
         click.secho('Process ID: %d' % os.getpid(), fg='red', bold=True, blink=True)
         while True:
             results = get_tess_all_events(start, include_expired)
-            push_to_iann(results['events'])
-            start = results['end']
-            logging.info('Last End:' + str(start))
-            logging.info('/**************************************************************************************/')
+            try:
+                push_to_iann(results['events'])
+                start = results['end']
+                logging.info('Last End:' + str(start))
+                logging.info('/**************************************************************************************/')
+            except pysolr.SolrError:
+                logging.info('There was an error trying to push the events to iAnn Solr, will try again in '
+                             + str(delay) + ' seconds')
+                logging.info('/**************************************************************************************/')
             time.sleep(delay)
 
 
