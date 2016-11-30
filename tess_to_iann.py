@@ -151,8 +151,14 @@ def get_start_from_log():
 @click.option('--daemonize', is_flag=True, help='Flag to run the script as a daemon')
 @click.option('--include_expired', is_flag=True, help='Flag to fetch expired events from TeSS')
 @click.option('--start', default=None, help='Start date (eg. 2000-01-01)')
-@click.option('--reset', is_flag=True, help='Flag to reset the Solr target instance and retrieve all the TeSS events')
-@click.option('--daily_reset_time', default=None, help='Time of the day to do the Solr instance reset (eg. 10:30)')
+@click.option('--reset', is_flag=True, help='Flag to reset the Solr target instance and retrieve all the TeSS events'
+                                            'BE CAREFUL!!!'
+                                            'This option will erase all the events on iAnn and will do a'
+                                            'complete fetch of the TeSS events.')
+@click.option('--daily_reset_time', default=None, help='Time of the day to do the Solr instance reset (eg. 10:30)'
+                                                       'BE CAREFUL!!!'
+                                                       'This option will erase all the events on iAnn and will do a'
+                                                       'complete fetch of the TeSS events.')
 def run(delay, log, tess_url, iann_url, daemonize, start, include_expired, reset, daily_reset_time):
     """
     ELIXIR TeSS to iAnn events synchronizer script V 0.0
