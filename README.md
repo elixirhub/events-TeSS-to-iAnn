@@ -39,7 +39,7 @@ Usage: tess_to_iann.py [OPTIONS]
 Options:
   --delay INTEGER          Seconds between executions when the script is run
                            as a daemon (eg. 60)
-  --log TEXT               Log file absolute path, if not defined will usethe
+  --log TEXT               Log file absolute path, if not defined will use the
                            one on the conf.py (eg.
                            /Users/niceusername/logs/ny_log.txt)
   --tess_url TEXT          TeSS service URL, if not defined will use the one
@@ -52,12 +52,12 @@ Options:
   --reset                  Flag to reset the Solr target instance and retrieve
                            all the TeSS events
                            BE CAREFUL!!! 
-                           This option will erase all the events on iAnn and will do acomplete
+                           This option will erase all the events on iAnn and will do a complete
                            fetch of the TeSS events.
   --daily_reset_time TEXT  Time of the day to do the Solr instance reset (eg.
                            10:30)
                            BE CAREFUL!!!
-                           This option will erase all the events on iAnn and will do acomplete fetch of the
+                           This option will erase all the events on iAnn and will do a complete fetch of the
                            TeSS events.
   --help                   Show this message and exit.
 ```
