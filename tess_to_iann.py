@@ -108,6 +108,38 @@ def push_to_iann(events):
     solr.add(events)
 
 
+def delete_all_iann():
+    solr = pysolr.Solr(conf.IANN_URL, timeout=10)
+    solr.delete(q='*:*')
+
+
+def reset_iann():
+    """
+    Deletes all the data contained in iAnn
+    """
+    start = utc.localize(parse('2000-01-01'))
+    results = get_tess_all_events(start, True)
+    logging.info('Trying to delete all iAnn Events')
+    try:
+        delete_all_iann()
+        push_to_iann(results['events'])
+        logging.info('Last End:' + str(results['end']))
+        return
+    except pysolr.SolrError:
+        logging.info('There was an error trying to push the events to iAnn Solr, will try again in 10 minutes')
+        time.sleep(36000)
+        reset_iann()
+
+
+def get_start_from_log():
+    log_start = None
+    for line in reversed(list(open(conf.LOG_FILE))):
+        if 'Last End:' in line:
+            log_start = line.split('Last End:')[1]
+            break
+    return log_start
+
+
 @click.command()
 @click.option('--delay', default=10, help='Seconds between executions when the script is run as a daemon (eg. 60)')
 @click.option('--log', default=conf.LOG_FILE, help='Log file path, if not defined will use the one on the conf.py')
@@ -116,7 +148,9 @@ def push_to_iann(events):
 @click.option('--daemonize', is_flag=True, help='Flag to run the script as a daemon')
 @click.option('--include_expired', is_flag=True, help='Flag to fetch expired events from TeSS')
 @click.option('--start', default=None, help='Start date')
-def run(delay, log, tess_url, iann_url, daemonize, start, include_expired):
+@click.option('--reset', is_flag=True, help='Flag to reset the Solr target instance and retrieve all the TeSS events')
+@click.option('--daily_reset_time', default=None, help='Time of the day to do the Solr instance reset')
+def run(delay, log, tess_url, iann_url, daemonize, start, include_expired, reset, daily_reset_time):
     """
     ELIXIR TeSS to iAnn events synchronizer script V 0.0
     Script to get TeSS events and push them to iAnn. It can be used as a batch process or as a daemon process.
@@ -124,11 +158,8 @@ def run(delay, log, tess_url, iann_url, daemonize, start, include_expired):
     conf.LOG_FILE = log
     conf.TESS_URL = tess_url
     conf.IANN_URL = iann_url
-    log_start = None
-    for line in reversed(list(open(conf.LOG_FILE))):
-        if 'Last End:' in line:
-            log_start = line.split('Last End:')[1]
-            break
+    log_start = get_start_from_log()
+
     if start:
         start = utc.localize(parse(start))
     elif log_start:
@@ -139,38 +170,46 @@ def run(delay, log, tess_url, iann_url, daemonize, start, include_expired):
     if not daemonize:
         click.secho('Fetching events from TeSS', fg='blue', bold=True)
         init()
+        if reset:
+            reset_iann()
+            return
         results = get_tess_all_events(start, include_expired)
         try:
             push_to_iann(results['events'])
             click.secho('Done!', fg='blue', bold=True)
             logging.info('Last End:' + str(results['end']))
-            logging.info('/**************************************************************************************/')
         except pysolr.SolrError:
             logging.info('There was an error trying to push the events to iAnn Solr')
-            logging.info('/**************************************************************************************/')
-
         return
     click.secho('Fetching events from TeSS every %d seconds' % delay, fg='blue', bold=True)
     with daemon.DaemonContext(stdout=sys.stdout, stderr=sys.stdout):
         init()
         click.secho('Process ID: %d' % os.getpid(), fg='red', bold=True, blink=True)
         while True:
+            if daily_reset_time:
+                hour = int(daily_reset_time.split(':')[0])
+                minute = int(daily_reset_time.split(':')[1])
+                t = utc.localize(datetime.now())
+                reset_time = utc.localize(datetime(t.year, t.month, t.day, hour, minute))
+                if start < reset_time < t:
+                    reset_iann()
+                    start = t
+                    continue
             results = get_tess_all_events(start, include_expired)
             try:
                 push_to_iann(results['events'])
                 start = results['end']
                 logging.info('Last End:' + str(start))
-                logging.info('/**************************************************************************************/')
             except pysolr.SolrError:
                 logging.info('There was an error trying to push the events to iAnn Solr, will try again in '
                              + str(delay) + ' seconds')
-                logging.info('/**************************************************************************************/')
             time.sleep(delay)
 
 
 if __name__ == "__main__":
     try:
         run()
-    except AttributeError:
+    except AttributeError, err:
+        print err
         print "Try 'python tess_to_iann.py --help' to get information about usage"
 
