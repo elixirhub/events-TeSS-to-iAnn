@@ -45,6 +45,8 @@ def map_tess_to_iann(tess_event=None):
                 iann_event[iann_field] = None
     iann_event['category'] = iann_event['category'] + ['event']\
         if 'category' in iann_event and iann_event['category'] else ['event']
+    iann_event['city'] = " " if not iann_event['city'] else iann_event['city']
+    iann_event['country'] = " " if not iann_event['country'] else iann_event['country']
     for index, item in enumerate(iann_event['category']):
         if item == 'workshops_and_courses':
             iann_event['category'][index] = 'course'
