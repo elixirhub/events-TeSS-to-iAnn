@@ -37,17 +37,29 @@ Usage: tess_to_iann.py [OPTIONS]
   daemon process.
 
 Options:
-  --delay INTEGER    Seconds between executions when the script is run as a
-                     daemon
-  --log TEXT         Log file path, if not defined will use the one on the
-                     conf.py
-  --tess_url TEXT    TeSS service URL, if not defined will use the one on
-                     conf.py
-  --iann_url TEXT    iAnn Solr URL, if not defined will use the one on conf.py
-  --daemonize        Flag to run the script as a daemon
-  --include_expired  Flag to fetch expired events from TeSS
-  --start TEXT       Start date
-  --help             Show this message and exit.
+  --delay INTEGER          Seconds between executions when the script is run
+                           as a daemon (eg. 60)
+  --log TEXT               Log file absolute path, if not defined will usethe
+                           one on the conf.py (eg.
+                           /Users/niceusername/logs/ny_log.txt)
+  --tess_url TEXT          TeSS service URL, if not defined will use the one
+                           on conf.py(eg. http://tess.elixir-uk.org/)
+  --iann_url TEXT          iAnn Solr URL, if not defined will use the one on
+                           conf.py(eg. http://localhost:8983/solr/iann)
+  --daemonize              Flag to run the script as a daemon
+  --include_expired        Flag to fetch expired events from TeSS
+  --start TEXT             Start date (eg. 2000-01-01)
+  --reset                  Flag to reset the Solr target instance and retrieve
+                           all the TeSS events
+                           BE CAREFUL!!! 
+                           This option will erase all the events on iAnn and will do acomplete
+                           fetch of the TeSS events.
+  --daily_reset_time TEXT  Time of the day to do the Solr instance reset (eg.
+                           10:30)
+                           BE CAREFUL!!!
+                           This option will erase all the events on iAnn and will do acomplete fetch of the
+                           TeSS events.
+  --help                   Show this message and exit.
 ```
 >## Notice
 >If you are using a virtual environment to manage your dependencies you will have to activate before running the script:
@@ -61,6 +73,14 @@ source activate .venv/bin/activate
 python tess_to_iaan.py --start 2016-10-17
 ```
 ### Run as daemon
+If you don't want to set a daily reset on your iAnn Solr instace you should run the script like this:
 ```{r, engine='bash', count_lines}
 python tess_to_iaan.py --daemonize --delay 3600
 ```
+
+If you want to reset your iAnn Solr instance every day at 23:00 you should run the script like this:
+
+```{r, engine='bash', count_lines}
+python tess_to_iann.py --daemonize --daily_reset_time 23:00 --delay 3600
+```
+This way the script will run every hour and in some time around 23:00 hours will be deleting all the iAnn events and doing a full fetch from TeSS.
