@@ -185,6 +185,8 @@ def run(delay, log, tess_url, iann_url, daemonize, start, include_expired, reset
     with daemon.DaemonContext(stdout=sys.stdout, stderr=sys.stdout):
         init()
         click.secho('Process ID: %d' % os.getpid(), fg='red', bold=True, blink=True)
+        logging.info('Fetching events from TeSS every %d seconds' % delay)
+        logging.info('Process ID: %d' % os.getpid())
         while True:
             if daily_reset_time:
                 hour = int(daily_reset_time.split(':')[0])
