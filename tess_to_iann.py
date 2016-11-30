@@ -38,8 +38,11 @@ def map_tess_to_iann(tess_event=None):
     if not tess_event:
         return iann_event
     for tess_field, iann_field in conf.TESS_TO_IANN_MAPPER.iteritems():
-        if tess_field in tess_event and tess_event[tess_field]:
-            iann_event[iann_field] = tess_event[tess_field]
+        if tess_field in tess_event:
+            if tess_event[tess_field]:
+                iann_event[iann_field] = tess_event[tess_field]
+            else:
+                iann_event[iann_field] = ""
     iann_event['category'] = iann_event['category'] + ['event'] if 'category' in iann_event else ['event']
     for index, item in enumerate(iann_event['category']):
         if item == 'workshops_and_courses':
