@@ -142,14 +142,17 @@ def get_start_from_log():
 
 @click.command()
 @click.option('--delay', default=10, help='Seconds between executions when the script is run as a daemon (eg. 60)')
-@click.option('--log', default=conf.LOG_FILE, help='Log file path, if not defined will use the one on the conf.py')
-@click.option('--tess_url', default=conf.TESS_URL, help='TeSS service URL, if not defined will use the one on conf.py')
-@click.option('--iann_url', default=conf.IANN_URL, help='iAnn Solr URL, if not defined will use the one on conf.py')
+@click.option('--log', default=conf.LOG_FILE, help='Log file absolute path, if not defined will use'
+                                                   'the one on the conf.py (eg. /Users/niceusername/logs/ny_log.txt)')
+@click.option('--tess_url', default=conf.TESS_URL, help='TeSS service URL, if not defined will use the one on conf.py'
+                                                        '(eg. http://tess.elixir-uk.org/)')
+@click.option('--iann_url', default=conf.IANN_URL, help='iAnn Solr URL, if not defined will use the one on conf.py'
+                                                        '(eg. http://localhost:8983/solr/iann)')
 @click.option('--daemonize', is_flag=True, help='Flag to run the script as a daemon')
 @click.option('--include_expired', is_flag=True, help='Flag to fetch expired events from TeSS')
-@click.option('--start', default=None, help='Start date')
+@click.option('--start', default=None, help='Start date (eg. 2000-01-01)')
 @click.option('--reset', is_flag=True, help='Flag to reset the Solr target instance and retrieve all the TeSS events')
-@click.option('--daily_reset_time', default=None, help='Time of the day to do the Solr instance reset')
+@click.option('--daily_reset_time', default=None, help='Time of the day to do the Solr instance reset (eg. 10:30)')
 def run(delay, log, tess_url, iann_url, daemonize, start, include_expired, reset, daily_reset_time):
     """
     ELIXIR TeSS to iAnn events synchronizer script V 0.0
