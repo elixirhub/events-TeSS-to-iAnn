@@ -63,9 +63,14 @@ def get_tess_events_from_url(query_url):
     """
     # Execute the HTTP query
     logging.info("Query to TeSS web service: " + query_url)
-    page_data = urllib2.urlopen(query_url)
-    # Load the JSON data into a Python dict
-    tess_events = json.load(page_data)
+    try:
+        page_data = urllib2.urlopen(query_url)
+        # Load the JSON data into a Python dict
+        tess_events = json.load(page_data)
+    except urllib2.URLError:
+        logging.error("Failed to get events from tess, retrying in 60 seconds")
+        time.sleep(60)
+        tess_events = get_tess_events_from_url(query_url)
     return tess_events
 
 
